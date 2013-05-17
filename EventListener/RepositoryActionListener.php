@@ -32,6 +32,14 @@ class RepositoryActionListener
         $this->parameters = $parameters;
     }
     
+    /**
+     * This method should be called when more than one object is expected. The 
+     * collection of data will be moved/converted over to an array. 
+     * Doctrine ORM doesn't require this conversion, but Doctrine MongoDB ODM 
+     * does.
+     * 
+     * @param \Onema\BaseApiBundle\Event\ApiProcessEvent $event
+     */
     public function onFindCollection(ApiProcessEvent $event)
     {
         $documents = $this->execute($event);
@@ -39,6 +47,11 @@ class RepositoryActionListener
         $event->setReturnData($collection);
     }
     
+    /**
+     * This method should be called when a single result is expected. 
+     * 
+     * @param \Onema\BaseApiBundle\Event\ApiProcessEvent $event
+     */
     public function onFindOne(ApiProcessEvent $event)
     {
         $document = $this->execute($event);
@@ -67,6 +80,14 @@ class RepositoryActionListener
         return $collection;
     }
     
+    /**
+     * Uses the repository to execute a query.
+     * 
+     * @param \Onema\BaseApiBundle\Event\ApiProcessEvent $event
+     * @return Entity|Document
+     * @throws RuntimeException
+     * @throws ResourceNotFoundException
+     */
     private function execute(ApiProcessEvent $event)
     {
         $repository = $event->getRepository();

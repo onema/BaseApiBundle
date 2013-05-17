@@ -155,8 +155,8 @@ class ProductController extends BaseRestController implements ClassResourceInter
      *      "groups"={"date"}
      *  }
      * )
-     * @See Onema\BaseApiBundle\EventListener\ResponseActionListener 
      * @Rest\View(serializerGroups={"date"})
+     * @see Onema\BaseApiBundle\EventListener\ResponseActionListener 
      */
     public function dateAction()
     {
