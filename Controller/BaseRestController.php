@@ -45,15 +45,11 @@ class BaseRestController extends Controller
      * correct response will be returned. On falure an error message will be 
      * returned. 
      * 
-     *  // register custom action listeners
-     *  $listener = new CustomActionListener();
-     *  $this->dispatcher->addListener(parent::GET, array($listener, 'onCustomListenerMethod'));
-     *  $documents = $this->findData();
-     * 
      * @param mixed $document
+     * @param string $documentType form type for the entity or document being processed, if none it will be guessed
      * @param string $location string to construct the Location URL
      * @param boolean $isNew
-     * @return mixed Symfony\Component\HttpFoundation\Response or View
+     * @return mixed Symfony\Component\HttpFoundation\Response
      */
     protected function processForm($document, $documentType = null, $location = false, $isNew = false)
     {
@@ -93,6 +89,13 @@ class BaseRestController extends Controller
         return $response;
     }
     
+    /**
+     * 
+     * @param mixed $document document|entity 
+     * @param mixed $documentType form type for the entity or document.
+     * @param type @param string $location string to construct the Location URL
+     * @return mixed document|entity
+     */
     protected function create($document, $documentType, $location)
     {
         return $this->processForm($document, $documentType, $location, true);
@@ -100,10 +103,11 @@ class BaseRestController extends Controller
     
     /**
      * 
-     * @param mixed $id 
-     * @param string $repoName name of the repository asociated with the document/entity that will be modified.
-     * @param string $location use to create the Location URL
-     * @return mixed Symfony\Component\HttpFoundation\Response or View
+     * @param mixed $id
+     * @param mixed $documentType
+     * @param string $repositoryName
+     * @param string $dataStore
+     * @return Symfony\Component\HttpFoundation\Response|FOS\RestBundle\View\View
      */
     protected function edit($id, $documentType, $repositoryName = null, $dataStore = null)
     {
@@ -119,6 +123,13 @@ class BaseRestController extends Controller
         return $response;
     }
     
+    /**
+     * 
+     * @param mixed $id
+     * @param string $repositoryName
+     * @param string $dataStore
+     * @return \Symfony\Component\HttpFoundation\Response
+     */
     protected function delete($id, $repositoryName = null, $dataStore = null)
     {
         $document = $this->getOne('findOneById', array('id' => $id), $repositoryName, $dataStore);
@@ -203,10 +214,10 @@ class BaseRestController extends Controller
     
     /**
      * 
-     * @param type $method
-     * @param type $parameters
-     * @param type $repositoryName
-     * @param type $dataStore
+     * @param string $method
+     * @param array $parameters
+     * @param string $repositoryName
+     * @param string $dataStore
      * @return type
      */
     protected function postUpdate($method, $parameters = array(), $repositoryName = null, $dataStore = null)
@@ -237,7 +248,7 @@ class BaseRestController extends Controller
      * Get a doctrine repository bassed on the repo name and the type of data 
      * store ie MongoDB or ORM
      * @param string $repositoryName Name of the Entity/Document repository
-     * @param type $dataStore either doctrine or doctrine_mongdb
+     * @param string $dataStore either doctrine or doctrine_mongdb
      * @return type
      */
     protected function getRepository($repositoryName = null, $dataStore = null)
@@ -256,7 +267,7 @@ class BaseRestController extends Controller
      * - 'doctrine'
      * - 'doctrine_mongodb'
      * 
-     * @param string|null
+     * @param string|null $dataStore name of the data manager that will be used
      * @return type Doctrine object or document manager
      */
     protected function getManager($dataStore = null)
@@ -269,9 +280,8 @@ class BaseRestController extends Controller
     }
     
     /**
-     * Get the class "type" including the namespace that corresponds to the given document. 
-     * This is a simple 1:1 between a Document and it's DocumentType
-     * @param type $documentClass
+     * Try to guess the form type class namespace and name based on the class name.
+     * @param string $documentClass
      * @return type
      */
     private function getTypeClassName($documentClass)
