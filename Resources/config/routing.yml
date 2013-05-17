@@ -1,0 +1,3 @@
+product:
+    type: rest
+    resource: Onema\BaseApiBundle\Controller\ProductController
