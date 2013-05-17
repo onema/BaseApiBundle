@@ -107,7 +107,7 @@ class BaseRestController extends Controller
      */
     protected function edit($id, $documentType, $repositoryName = null, $dataStore = null)
     {
-        $document = $this->getOne('onFindOne', array('id' => $id), $repositoryName, $dataStore);
+        $document = $this->getOne('findOneById', array('id' => $id), $repositoryName, $dataStore);
         
         if($document === null) {
             $response = View::create(sprintf('The requested resource with id "%s" doesn\'t exist.', $id), 400);
@@ -121,7 +121,7 @@ class BaseRestController extends Controller
     
     protected function delete($id, $repositoryName = null, $dataStore = null)
     {
-        $document = $this->getOne('onFindOne', array('id' => $id), $repositoryName, $dataStore);
+        $document = $this->getOne('findOneById', array('id' => $id), $repositoryName, $dataStore);
         
         if($document === null) {
             $response = View::create(sprintf('The resource with id "%s" doesn\'t exist.', $id), 400);
