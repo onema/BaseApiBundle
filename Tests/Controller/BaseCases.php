@@ -21,33 +21,107 @@ class BaseCases extends WebTestCase
     protected $uriSingular;
     protected $controllerPlural;
     protected $controllerSingular;
+    protected $prefix;
     
     protected $putParameters;  
     protected $postParameters;
-
+    
+    static $createdResources = array();
 
     public function setUp()
     {
-        $this->uri = '/api/' . $this->controllerPlural; 
-        $this->uriSingular = '/api/' . $this->controllerSingular;
+        $this->uri = '/' . $this->prefix . $this->controllerPlural; 
+        $this->uriSingular = '/' . $this->prefix . $this->controllerSingular;
+    }
+    
+    public function testPostOne()
+    {
+        foreach($this->postParameters as $parameters) {
+            $client = static::createClient();
+            $client->request('POST', $this->uriSingular, $parameters);
+            $response = json_decode($client->getResponse()->getContent());
+            
+            // Ensure that call returns a 201 Created status code. 
+            $code = $client->getResponse()->getStatusCode();
+            $this->assertEquals(Codes::HTTP_CREATED, $code);
+
+            $headers = $client->getResponse()->headers;
+            $location = $headers->get('Location');
+            $parts = explode('/', $location);
+            $size = sizeof($parts);
+            $id = $parts[$size-1];
+
+            // assert an ID with alpha numeric format: mongodb ids.
+            $this->assertRegExp(
+                '/^[a-zA-Z\d]+$/',
+                $id
+            );
+            
+            self::$createdResources[$location] = $id;
+        }
+        
+        
+        return self::$createdResources;
+    }
+    
+    /**
+     * @depends testPostOne
+     */
+    public function testGetCreatedContent($values)
+    {
+        foreach ($values as $location => $id) {
+            $client = static::createClient();
+            $client->request('GET', $location);
+
+            $response = json_decode($client->getResponse()->getContent());
+            $code = $client->getResponse()->getStatusCode();
+            $this->assertEquals(Codes::HTTP_OK, $code);
+        }
+        
+        // return the last id so the next test can update it. 
+        return $values;
+    }
+    
+    /**
+     * @depends testGetCreatedContent
+     * @todo check values agains the old ones to ensure they where update correctly.
+     */
+    public function testPutOne($values)
+    {
+        $id = array_pop($values);
+        print_r($id);
+        
+        $client = static::createClient();
+        $client->request('PUT', $this->uri . '/' . $id, $this->putParameters);
+        $code = $client->getResponse()->getStatusCode();
+        $this->assertEquals(Codes::HTTP_NO_CONTENT, $code);
     }
     
     public function testGetCollection()
     {
+        $minimunSize = sizeof($this->putParameters)-1;
         $client = static::createClient();
         $crawler = $client->request('GET', $this->uri);
+        
         $this->assertRegExp('/'.$this->controllerPlural.'/', $client->getResponse()->getContent());
+        
+        $response = json_decode($client->getResponse()->getContent());
+        $this->assertGreaterThan(
+            $minimunSize,
+            sizeof($response)
+        );
     }
     
     public function testGetCollectionPaginated()
     {
+        $paginationSize = sizeof($this->putParameters);
         $client = static::createClient();
-        $crawler = $client->request('GET', $this->uri, array('skip'=>0, 'limit' => 5));
+        $crawler = $client->request('GET', $this->uri, array('skip'=>0, 'limit' => $paginationSize));
         $response = json_decode($client->getResponse()->getContent());
         
         $objectName = $this->controllerPlural;
         $resultCount = count($response->$objectName);
-        $this->assertEquals(5, $resultCount);
+        $this->assertEquals($paginationSize, $resultCount);
         
         $code = $client->getResponse()->getStatusCode();
         $this->assertEquals(Codes::HTTP_OK, $code);
@@ -65,54 +139,6 @@ class BaseCases extends WebTestCase
         
         $code = $client->getResponse()->getStatusCode();
         $this->assertEquals(Codes::HTTP_OK, $code);
-    }
-    
-    public function testPutOne()
-    {
-        $client = static::createClient();
-        $client->request('PUT', $this->uriSingular, $this->putParameters);
-        
-        $code = $client->getResponse()->getStatusCode();
-        $this->assertEquals(Codes::HTTP_CREATED, $code);
-        
-        $headers = $client->getResponse()->headers;
-        $location = $headers->get('Location');
-        $parts = explode('/', $location);
-        $size = sizeof($parts);
-        $id = $parts[$size-1];
-        
-        // assert an ID with alpha numeric format: mongodb ids.
-        $this->assertRegExp(
-            '/^[a-zA-Z\d]+$/',
-            $id
-        );
-        
-        return array('location' => $location, 'id' => $id);
-    }
-    
-    /**
-     * @depends testPutOne
-     */
-    public function testGetOne($putValues)
-    {
-        $client = static::createClient();
-        $client->request('GET', $putValues['location']);
-        
-        $code = $client->getResponse()->getStatusCode();
-        $this->assertEquals(Codes::HTTP_OK, $code);
-        
-        return $putValues['id'];
-    }
-    
-    /**
-     * @depends testGetOne
-     */
-    public function testPostOne($id)
-    {
-        $client = static::createClient();
-        $client->request('POST', $this->uri . '/' . $id, $this->postParameters);
-        $code = $client->getResponse()->getStatusCode();
-        $this->assertEquals(Codes::HTTP_NO_CONTENT, $code);
     }
     
     public function testZeroPagination()
@@ -146,5 +172,35 @@ class BaseCases extends WebTestCase
         
         $code = $client->getResponse()->getStatusCode();
         $this->assertEquals(404, $code);
+    }
+    
+    public function testDeleteCreatedResources() 
+    {
+        $values = self::$createdResources;
+        
+        foreach ($values as $location => $id) {
+            $client = static::createClient();
+            $client->request('DELETE', $location);
+
+            $code = $client->getResponse()->getStatusCode();
+            $this->assertEquals(Codes::HTTP_NO_CONTENT, $code);
+        }
+        
+        return $values;
+    }
+    
+    /**
+     * @depends testDeleteCreatedResources
+     */
+    public function testGetDeleteContent($values)
+    {
+        foreach ($values as $location => $id) {
+            $client = static::createClient();
+            $client->request('GET', $location);
+
+            $response = json_decode($client->getResponse()->getContent());
+            $code = $client->getResponse()->getStatusCode();
+            $this->assertEquals(Codes::HTTP_NOT_FOUND, $code);
+        }
     }
 }

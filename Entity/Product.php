@@ -63,6 +63,7 @@ class Product
     public function getId()
     {
         return $this->id;
+        $this->created = new \DateTime();
     }
 
     /**

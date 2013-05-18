@@ -124,6 +124,7 @@ class BaseRestController extends Controller
     }
     
     /**
+     * Delete a document or entity using it's id. 
      * 
      * @param mixed $id
      * @param string $repositoryName
@@ -134,17 +135,12 @@ class BaseRestController extends Controller
     {
         $document = $this->getOne('findOneById', array('id' => $id), $repositoryName, $dataStore);
         
-        if($document === null) {
-            $response = View::create(sprintf('The resource with id "%s" doesn\'t exist.', $id), 400);
-        }
-        else {
-            $manager = $this->getManager();
-            $manager->remove($document);
-            $manager->flush();
-            
-            $response = new Response();
-            $response->setStatusCode(Codes::HTTP_NO_CONTENT);
-        }
+        $manager = $this->getManager();
+        $manager->remove($document);
+        $manager->flush();
+
+        $response = new Response();
+        $response->setStatusCode(Codes::HTTP_NO_CONTENT);
         
         return $response;
     }

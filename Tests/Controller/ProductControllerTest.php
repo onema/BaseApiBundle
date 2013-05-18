@@ -16,26 +16,46 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
  */
 class ProductControllerTest extends BaseCases
 {
-    protected $controllerPlural;
-    protected $controllerSingular;
-
     public function setUp()
     {
         $this->controllerPlural = 'products';
         $this->controllerSingular = 'product';
+        $this->prefix = 'api/';
         
-        $this->putParameters = array(
-            'product' => array(
-                'name' => 'testeo',
-                'images' => array(array('path'=>'image1.png'), array('path' => 'image2.png')),
-                'category' => 'category 1',
+        $this->postParameters = array(
+            array(
+                'product' => array(
+                    'name' => 'Test 1',
+                    'price' => 100,
+                    'description' => 'description 1',
+                )
+            ),
+            array(
+                'product' => array(
+                    'name' => 'Test 2',
+                    'images' => array(
+                        array('path'=>'image1.png'), array('path' => 'image2.png')
+                    ),
+                    'category' => 'category 1',
+                )
+            ),
+            array(
+                'product' => array(
+                    'name' => 'Test 3',
+                    'images' => array(
+                        array('path'=>'image1.png'), array('path' => 'image2.png')
+                    ),
+                    'category' => 'category 1',
+                )
             )
         );
         
-        $this->postParameters = array(
+        $this->putParameters = array(
             'product' => array(
-                'name' => 'testeo' . time() ,
-                'images' => array(array('path'=>'image3.png'), array('path' => 'image4.png')),
+                'name' => 'Test 1 updated ' . time() ,
+                'images' => array(
+                    array('path'=>'image3.png')
+                ),
                 'yelp' => 'someyelpsite.com',
                 'category' => 'category 2',
             )
