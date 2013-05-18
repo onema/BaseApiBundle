@@ -57,7 +57,8 @@ class BaseApiController extends Controller
         
         if(!isset($documentType)) {
             // try to guess the document type from the document class type
-            $documentType = $this->getTypeClassName(get_class($document));
+            $documentTypeClass = $this->getTypeClassName(get_class($document));
+            $documentType = new $documentTypeClass();
         }
         
         $form = $this->createForm($documentType, $document);
@@ -109,7 +110,7 @@ class BaseApiController extends Controller
      * @param string $dataStore
      * @return Symfony\Component\HttpFoundation\Response|FOS\RestBundle\View\View
      */
-    protected function edit($id, $documentType, $repositoryName = null, $dataStore = null)
+    protected function edit($id, $documentType = null, $repositoryName = null, $dataStore = null)
     {
         $document = $this->getOne('findOneById', array('id' => $id), $repositoryName, $dataStore);
         
@@ -226,7 +227,7 @@ class BaseApiController extends Controller
     
     /**
      * Get the pagination parameters form the query:
-     * - from: integer, where it should start getting parameters (skip for mongo queries)
+     * - skip: integer, where it should start getting parameters (skip for mongo queries)
      * - limit: maximum nubmer of results it should return. 
      * 
      * @return array
@@ -235,7 +236,7 @@ class BaseApiController extends Controller
     {
         $query = $this->getRequest()->query;
         return array(
-            'from' => $query->get('from'), 
+            'skip' => $query->get('skip'), 
             'limit'   => $query->get('limit')
         );
     }

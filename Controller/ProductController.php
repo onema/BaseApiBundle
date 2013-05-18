@@ -82,6 +82,26 @@ class ProductController extends BaseApiController implements ClassResourceInterf
     {
         return $this->edit($id, new ProductType());
     }
+    
+    /**
+     * Delete a resource identified by the request id. 
+     * 
+     * @ApiDoc(
+     *  description="Delete a resource identified by {id}",
+     *  statusCodes={
+     *      204="Returned when successful",
+     *      403="Returned when the user is not authorized to create the given resource",
+     *      404="Returned when the resource was not found",
+     *      500="Returned when a server error occurred"
+     *     }
+     * )
+     * @param integer $id the id of the article to be deleted
+     * @return type
+     */
+    public function deleteAction($id)
+    {
+        return $this->delete($id);
+    }
 
     /**
      * Returns a collection of entities, pagination is supported for this method.

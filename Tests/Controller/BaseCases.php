@@ -37,9 +37,12 @@ class BaseCases extends WebTestCase
     public function testPostOne()
     {
         foreach($this->postParameters as $parameters) {
+            
             $client = static::createClient();
             $client->request('POST', $this->uriSingular, $parameters);
             $response = json_decode($client->getResponse()->getContent());
+            
+            print_r($response);
             
             // Ensure that call returns a 201 Created status code. 
             $code = $client->getResponse()->getStatusCode();
@@ -89,7 +92,6 @@ class BaseCases extends WebTestCase
     public function testPutOne($values)
     {
         $id = array_pop($values);
-        print_r($id);
         
         $client = static::createClient();
         $client->request('PUT', $this->uri . '/' . $id, $this->putParameters);
@@ -101,7 +103,7 @@ class BaseCases extends WebTestCase
     {
         $minimunSize = sizeof($this->putParameters)-1;
         $client = static::createClient();
-        $crawler = $client->request('GET', $this->uri);
+        $client->request('GET', $this->uri);
         
         $this->assertRegExp('/'.$this->controllerPlural.'/', $client->getResponse()->getContent());
         
@@ -114,9 +116,9 @@ class BaseCases extends WebTestCase
     
     public function testGetCollectionPaginated()
     {
-        $paginationSize = sizeof($this->putParameters);
+        $paginationSize = sizeof($this->postParameters);
         $client = static::createClient();
-        $crawler = $client->request('GET', $this->uri, array('skip'=>0, 'limit' => $paginationSize));
+        $client->request('GET', $this->uri, array('skip'=>0, 'limit' => $paginationSize));
         $response = json_decode($client->getResponse()->getContent());
         
         $objectName = $this->controllerPlural;
@@ -125,12 +127,41 @@ class BaseCases extends WebTestCase
         
         $code = $client->getResponse()->getStatusCode();
         $this->assertEquals(Codes::HTTP_OK, $code);
+        
+        return $response;
+    }
+    
+    /**
+     * @depends testGetCollectionPaginated
+     */
+    public function testGetCollectionPaginatedSkip($response)
+    {
+        $paginationSize = sizeof($this->postParameters) - 1;
+        
+        $client = static::createClient();
+        $client->request('GET', $this->uri, array('skip' => 1, 'limit' => $paginationSize));
+        $responseSkipped = json_decode($client->getResponse()->getContent());
+        
+        $objectName = $this->controllerPlural;
+        $resultCount = count($responseSkipped->$objectName);
+        
+        $this->assertEquals($paginationSize, $resultCount);
+
+        // check if the objects from response 1 subindex 1 match response 2 subindex 0.
+//        if(isset($response->$objectName[0]['id'])) {
+//            $id1 = $response->$objectName[1]['id'];
+//            $id2 = $responseSkipped->$objectName[0]['id'];
+//            $this->assertEquals($id1, $id2);
+//        }
+        
+        $code = $client->getResponse()->getStatusCode();
+        $this->assertEquals(Codes::HTTP_OK, $code);
     }
     
     public function testGetAll()
     {
         $client = static::createClient();
-        $crawler = $client->request('GET', $this->uri);
+        $client->request('GET', $this->uri);
         $response = json_decode($client->getResponse()->getContent());
         
         $objectName = $this->controllerPlural;
