@@ -13,6 +13,8 @@ use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use FOS\Rest\Util\Codes;
 
 /**
+ * BaseCases test the most basic functionality a controller should implement:
+ * PUT
  * @author  Juan Manuel Torres <kinojman@gmail.com>
  */
 class BaseCases extends WebTestCase
@@ -26,8 +28,13 @@ class BaseCases extends WebTestCase
     protected $putParameters;  
     protected $postParameters;
     
-    static $createdResources = array();
-
+    static $createdResources;
+    
+    public static function setUpBeforeClass()
+    {
+        self::$createdResources = array();
+    }
+    
     public function setUp()
     {
         $this->uri = '/' . $this->prefix . $this->controllerPlural; 
@@ -42,6 +49,7 @@ class BaseCases extends WebTestCase
             $client->request('POST', $this->uriSingular, $parameters);
             $response = json_decode($client->getResponse()->getContent());
             
+            // will print out the cause of the error, otherwise the content will be empty
             print_r($response);
             
             // Ensure that call returns a 201 Created status code. 
@@ -77,6 +85,7 @@ class BaseCases extends WebTestCase
             $client->request('GET', $location);
 
             $response = json_decode($client->getResponse()->getContent());
+            
             $code = $client->getResponse()->getStatusCode();
             $this->assertEquals(Codes::HTTP_OK, $code);
         }
