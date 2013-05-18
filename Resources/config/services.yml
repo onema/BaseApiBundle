@@ -1,7 +1,7 @@
 parameters:
-#    rest_api_crud.example.class: Onema\BaseApiBundle\Example
+#    base_api.example.class: Onema\BaseApiBundle\Example
 
 services:
-#    rest_api_crud.example:
-#        class: %rest_api_crud.example.class%
+#    base_api.example:
+#        class: %base_api.example.class%
 #        arguments: [@service_id, "plain_value", %parameter%]
