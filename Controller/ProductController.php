@@ -25,7 +25,7 @@ use Nelmio\ApiDocBundle\Annotation\ApiDoc;
  * 
  * @package Onema\BaseApiBundle\Controller
  */
-class ProductController extends BaseRestController implements ClassResourceInterface
+class ProductController extends BaseApiController implements ClassResourceInterface
 {
     public function __construct() {
         parent::__construct();

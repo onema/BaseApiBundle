@@ -25,7 +25,7 @@ use Onema\BaseApiBundle\EventListener\RepositoryActionListener;
 /**
  * @author  Juan Manuel Torres <kinojman@gmail.com>
  */
-class BaseRestController extends Controller 
+class BaseApiController extends Controller 
 {
     const VENDOR = 0;
     const BUNDLE = 1;
