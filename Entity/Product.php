@@ -141,7 +141,7 @@ class Product
      * @param \Onema\StoreBundle\Entity\Category $category
      * @return Product
      */
-    public function setCategory(\Onema\StoreBundle\Entity\Category $category = null)
+    public function setCategory($category = null)
     {
         $this->category = $category;
     
