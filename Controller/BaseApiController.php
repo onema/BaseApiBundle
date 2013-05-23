@@ -196,9 +196,10 @@ class BaseApiController extends Controller
      * Use this when multiple results are expected. if a single result is found, it 
      * will be contained in an array.
      * 
-     * @param string $repo repository name
      * @param string $method repository method to be called
      * @param array $parameters list of parameters to pass to the repository method. 
+     * @param string $repo repository name
+     * @param string $dataStore either doctrine or doctrine_mongodb
      * @return mixed Document
      */
     protected function getCollection($method, $parameters = array(), $repositoryName = null, $dataStore = null)
