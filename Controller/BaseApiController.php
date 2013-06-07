@@ -56,7 +56,7 @@ class BaseApiController extends Controller
         $statusCode = $isNew ? Codes::HTTP_CREATED : Codes::HTTP_NO_CONTENT;
         
         if(!isset($documentType)) {
-            // try to guess the document type from the document class type
+            // try to guess the document type from the document class name
             $documentTypeClass = $this->getTypeClassName(get_class($document));
             $documentType = new $documentTypeClass();
         }
@@ -304,8 +304,8 @@ class BaseApiController extends Controller
             $errors[$key] = $error->getMessage();
         }
         
-        if ($form->hasChildren()) {
-            foreach ($form->getChildren() as $child) {
+        if ($form->count()) {
+            foreach ($form->all() as $child) {
                 if (!$child->isValid()) {
                     $errors[$child->getName()] = $this->getErrorMessages($child);
                 }
