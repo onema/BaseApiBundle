@@ -165,6 +165,7 @@ class BaseApiController extends Controller
             $data = $event->getReturnData();
         }
         else if($this->dispatcher->hasListeners(self::API_PROCESS)) {
+            // Not implemented yet...
             $data = array();
         }
 
