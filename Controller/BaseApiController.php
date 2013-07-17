@@ -15,6 +15,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\HttpKernel\Kernel;
 
 use FOS\RestBundle\View\View;
 use FOS\Rest\Util\Codes;
@@ -62,7 +63,15 @@ class BaseApiController extends Controller
         }
         
         $form = $this->createForm($documentType, $document);
-        $form->bind($this->getRequest());
+        
+        // Support for versions greater than 2.3 which shouldn't pass the request 
+        // to the submit method and previous version that support it. 
+        if (version_compare(Kernel::VERSION, '2.3', '>=')) {
+            $form->handleRequest($this->getRequest());
+        }
+        else if(version_compare(Kernel::VERSION, '2.1', '>=')){
+            $form->submit($this->getRequest());
+        }
         
         if($form->isValid()) {
             $manager = $this->getManager();
@@ -165,7 +174,11 @@ class BaseApiController extends Controller
             $data = $event->getReturnData();
         }
         else if($this->dispatcher->hasListeners(self::API_PROCESS)) {
-            // Not implemented yet...
+            /**
+             * Not implemented yet...
+             * @TODO add listener to perform actions other than search. consider using 
+             * the form listeners to avoid this block all together. 
+             */
             $data = array();
         }
 

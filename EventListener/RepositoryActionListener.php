@@ -59,25 +59,23 @@ class RepositoryActionListener
     }
     
     /**
-     * JMS Serializer doesn't play well with all doctrine ODM objects. this is a 
+     * JMS Serializer doesn't play well with all doctrine ODM Cursor objects. this is a 
      * utility funciton that will put this collection into a siple array. 
      * @param type $documents
      * @return array
      */
     private function convertDocumentCollection($documents)
     {
-        $collection = array();
-        
-        foreach ($documents as $document) {
-            $collection[] = $document;
+        if($documents instanceof \Doctrine\ODM\MongoDB\Cursor) {
+            $documents = $documents->toArray();
         }
         
         // No data should return a 404 
-        if(empty($collection)) {
+        if(empty($documents)) {
             throw new ResourceNotFoundException('Could not find resource', 404);
         }
         
-        return $collection;
+        return $documents;
     }
     
     /**
