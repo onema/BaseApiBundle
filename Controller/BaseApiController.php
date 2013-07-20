@@ -55,6 +55,7 @@ class BaseApiController extends Controller
     protected function processForm($document, $documentType = null, $location = false, $isNew = false)
     {
         $statusCode = $isNew ? Codes::HTTP_CREATED : Codes::HTTP_NO_CONTENT;
+        $request = $this->getRequest();
         
         if(!isset($documentType)) {
             // try to guess the document type from the document class name
@@ -62,7 +63,7 @@ class BaseApiController extends Controller
             $documentType = new $documentTypeClass();
         }
         
-        $form = $this->createForm($documentType, $document);
+        $form = $this->createForm($documentType, $document, array('method' => $request->getMethod()));
         
         // Support for versions greater than 2.3 which shouldn't pass the request 
         // to the submit method and previous version that support it. 
