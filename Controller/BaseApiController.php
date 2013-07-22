@@ -124,6 +124,9 @@ class BaseApiController extends Controller
         $document = $this->getOne('findOneById', array('id' => $id), $repositoryName, $dataStore);
         
         if($document === null) {
+            /**
+             * @todo Add support for PUT request
+             */
             $response = View::create(sprintf('The requested resource with id "%s" doesn\'t exist.', $id), 400);
         }
         else {
