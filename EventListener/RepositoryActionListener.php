@@ -59,8 +59,8 @@ class RepositoryActionListener
     }
     
     /**
-     * JMS Serializer doesn't play well with all doctrine ODM Cursor objects. this is a 
-     * utility funciton that will put this collection into a siple array. 
+     * JMS Serializer doesn't play well with doctrine ODM Cursor objects. this is a 
+     * utility method that will put this collection into a siple array. 
      * @param type $documents
      * @return array
      */
