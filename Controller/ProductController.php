@@ -53,7 +53,7 @@ class ProductController extends BaseApiController implements ClassResourceInterf
      * )
      * @return type
      */
-    public function putAction()
+    public function postAction()
     {
         return $this->create(new Product(), new ProductType(), 'get_product');
     }
@@ -78,7 +78,7 @@ class ProductController extends BaseApiController implements ClassResourceInterf
      * @param integer $id unique identifier of the resource
      * @return Response
      */
-    public function postAction($id)
+    public function putAction($id)
     {
         return $this->edit($id, new ProductType());
     }
