@@ -30,11 +30,11 @@ class PatchSubscriber implements EventSubscriberInterface
     protected function prepareData($form)
     {
         if ($form->count()) {
-            $ary = array();
+            $data = array();
             foreach ($form->all() as $name => $child) {
-                $ary[$name] = $this->prepareData($child);
+                $data[$name] = $this->prepareData($child);
             }
-            return $ary;
+            return $data;
         } else {
             return $form->getViewData();
         }
