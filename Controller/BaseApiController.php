@@ -206,7 +206,10 @@ class BaseApiController extends Controller
         $listener = new RepositoryActionListener($method, $parameters);
         $this->dispatcher->addListener(self::API_GET, array($listener, 'onFindOne'));
         
-        return $this->processData($repositoryName, $dataStore);
+        $data = $this->processData($repositoryName, $dataStore);
+        $this->dispatcher->removeListener(self::API_GET, $listener);
+        
+        return $data;
     }
     
     /**
@@ -225,7 +228,10 @@ class BaseApiController extends Controller
         $listener = new RepositoryActionListener($method, $parameters);
         $this->dispatcher->addListener(self::API_GET, array($listener, 'onFindCollection'));
         
-        return $this->processData($repositoryName, $dataStore);
+        $data = $this->processData($repositoryName, $dataStore);
+        $this->dispatcher->removeListener(self::API_GET, array($listener, 'onFindCollection'));
+        
+        return $data;
     }
     
     /**
