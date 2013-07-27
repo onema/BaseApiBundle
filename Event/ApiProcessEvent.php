@@ -18,10 +18,15 @@ class ApiProcessEvent extends Event
 {
     protected $repository;
     protected $data;
-    
-    public function __construct($repository) 
+    protected $isProcessed = false; 
+    protected $method;
+    protected $arguments;
+
+    public function __construct($repository, $method, $arguments) 
     {
         $this->repository = $repository;
+        $this->method = $method;
+        $this->arguments = $arguments;
     }
     
     public function getRepository()
@@ -29,13 +34,33 @@ class ApiProcessEvent extends Event
         return $this->repository;
     }
     
+    public function getMethod() 
+    {
+        return $this->method;
+    }
+    
+    public function getArguments()
+    {
+        return $this->arguments;
+    }
+    
+    /**
+     * Sets the value to return and stops other listeners from being notified
+     */
     public function setReturnData($data)
     {
         $this->data = $data;
+        $this->isProcessed = true;
+        $this->stopPropagation();
     }
     
     public function getReturnData()
     {
         return $this->data;
+    }
+    
+    public function isProcessed()
+    {
+        return $this->isProcessed;
     }
 }

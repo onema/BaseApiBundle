@@ -20,6 +20,7 @@ use Symfony\Component\HttpKernel\Kernel;
 use FOS\RestBundle\View\View;
 use FOS\Rest\Util\Codes;
 
+use Onema\BaseApiBundle\Exception\MissingRepositoryMethodException;
 use Onema\BaseApiBundle\Event\ApiProcessEvent;
 use Onema\BaseApiBundle\EventListener\RepositoryActionListener;
 
@@ -32,13 +33,50 @@ class BaseApiController extends Controller
     const BUNDLE = 1;
     const API_GET = 'api.get';
     const API_PROCESS = 'api.process';
+    const API_REPOSITORY = 'api.use_repository';
     
     protected $dispatcher;
     protected $defaultRepository;
     protected $defaultDataStore;
     
-    public function __construct() {
+    public function __construct() 
+    {
         $this->dispatcher = new EventDispatcher();
+        $repositoryActionListener = new RepositoryActionListener();
+        $this->dispatcher->addListener(self::API_REPOSITORY, array($repositoryActionListener, 'onCall'));
+    }
+    
+    /**
+     * Adds the Default Repository methods to the controller. This method leverages 
+     * the event dispatcher to call any method of the repository defined in 
+     * BaseApiController::defaultRepository.
+     * 
+     * How to extend a Class without Using Inheritance {@link http://symfony.com/doc/current/cookbook/event_dispatcher/class_extension.html}
+     * Related classes {@link Onema\BaseApiBundle\EventListener\RepositoryActionListener}
+     * and {@link Onema\BaseApiBundle\Event\ApiProcessEvent description
+     * 
+     * @param string $method
+     * @param array $arguments
+     * @return mixed
+     * @throws \Exception
+     * @throws MissingRepositoryMethodException
+     */
+    public function __call($method, $arguments)
+    {
+        $repository = $this->getRepository($this->defaultRepository, $this->defaultDataStore);
+        
+        // The registered event listener from the child class will be called.
+        $event = new ApiProcessEvent($repository, $method, $arguments);
+        $this->dispatcher->dispatch(self::API_REPOSITORY, $event);
+
+        // no listener was able to process the event? The method does not exist
+        if (!$event->isProcessed()) {
+            throw new MissingRepositoryMethodException(sprintf('Call to undefined method %s::%s.', get_class($this), $method));
+        }
+
+        // return the listener returned value
+        return $event->getReturnData();
+        
     }
     
     /**

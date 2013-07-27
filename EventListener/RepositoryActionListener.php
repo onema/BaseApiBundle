@@ -24,12 +24,12 @@ use Onema\BaseApiBundle\Event\ApiProcessEvent;
  */
 class RepositoryActionListener
 {
-    private $parameters;
+    private $arguments;
     private $method;
     
-    public function __construct($method, $parameters = array()) {
+    public function __construct($method = null, $arguments = array()) {
         $this->method = $method;
-        $this->parameters = $parameters;
+        $this->arguments = $arguments;
     }
     
     /**
@@ -51,11 +51,22 @@ class RepositoryActionListener
      * This method should be called when a single result is expected. 
      * 
      * @param \Onema\BaseApiBundle\Event\ApiProcessEvent $event
+     * @deprecated since version 0.0.2
      */
     public function onFindOne(ApiProcessEvent $event)
     {
         $document = $this->execute($event);
         $event->setReturnData($document);
+    }
+    
+    
+    public function onCall(ApiProcessEvent $event)
+    {
+        $this->method = $event->getMethod();
+        $this->arguments = $event->getArguments();
+        
+        $event->setReturnData($document);
+        $document = $this->execute($event);
     }
     
     /**
@@ -95,7 +106,7 @@ class RepositoryActionListener
                 array(
                     $repository, 
                     $this->method
-                ), $this->parameters);
+                ), $this->arguments);
         }
         catch(DBALException $e) {
             throw new RuntimeException('A DBAL error occurred while processing your request');
