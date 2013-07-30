@@ -22,7 +22,7 @@ class ApiProcessEvent extends Event
     protected $method;
     protected $arguments;
 
-    public function __construct($repository, $method, $arguments) 
+    public function __construct($repository, $method = null, $arguments = null) 
     {
         $this->repository = $repository;
         $this->method = $method;
