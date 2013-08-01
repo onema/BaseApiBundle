@@ -65,8 +65,8 @@ class RepositoryActionListener
         $this->method = $event->getMethod();
         $this->arguments = $event->getArguments();
         
-        $event->setReturnData($document);
         $document = $this->execute($event);
+        $event->setReturnData($document);
     }
     
     /**
