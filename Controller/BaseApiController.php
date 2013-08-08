@@ -116,17 +116,10 @@ class BaseApiController extends Controller
             $manager->persist($document);
             $manager->flush();
             
-            $response = new Response();
-            $response->setStatusCode($statusCode);
-            
-            // being programmatic here, will return the created resource in the body of the content
-//            $serializer = SerializerBuilder::create()->build();
-//            $format = $request->getRequestFormat();
-//            $content = $serializer->serialize($document, $format);
-//            $response->setContent($content);
+            $view = View::create(null, $statusCode);
             
             if($statusCode === Codes::HTTP_CREATED) {
-                $response->headers->set('Location', 
+                $view->setHeader('Location',
                     $this->generateUrl(
                         $location, 
                         array('id' => $document->getId()),
@@ -134,9 +127,6 @@ class BaseApiController extends Controller
                     )
                 );
             }
-            
-            $view = View::create();
-            $view->setResponse($response);
         }
         else {
             $errors = $this->getErrorMessages($form);
