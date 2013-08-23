@@ -11,14 +11,15 @@ namespace Onema\BaseApiBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Exception\ResourceNotFoundException;
+use Symfony\Component\HttpKernel\Kernel;
+
+use JMS\Serializer\SerializerBuilder;
 
 use FOS\RestBundle\View\View;
 use FOS\Rest\Util\Codes;
 
+use Onema\BaseApiBundle\Exception\MissingRepositoryMethodException;
 use Onema\BaseApiBundle\Event\ApiProcessEvent;
 use Onema\BaseApiBundle\EventListener\RepositoryActionListener;
 
@@ -31,13 +32,50 @@ class BaseApiController extends Controller
     const BUNDLE = 1;
     const API_GET = 'api.get';
     const API_PROCESS = 'api.process';
+    const API_REPOSITORY = 'api.use_repository';
     
     protected $dispatcher;
     protected $defaultRepository;
     protected $defaultDataStore;
     
-    public function __construct() {
+    public function __construct() 
+    {
         $this->dispatcher = new EventDispatcher();
+        $repositoryActionListener = new RepositoryActionListener();
+        $this->dispatcher->addListener(self::API_REPOSITORY, array($repositoryActionListener, 'onCall'));
+    }
+    
+    /**
+     * Adds the Default Repository methods to the controller. This method leverages 
+     * the event dispatcher to call any method of the repository defined in 
+     * BaseApiController::defaultRepository.
+     * 
+     * How to extend a Class without Using Inheritance {@link http://symfony.com/doc/current/cookbook/event_dispatcher/class_extension.html}
+     * Related classes {@link Onema\BaseApiBundle\EventListener\RepositoryActionListener}
+     * and {@link Onema\BaseApiBundle\Event\ApiProcessEvent}
+     * 
+     * @param string $method
+     * @param array $arguments
+     * @return mixed
+     * @throws \Exception
+     * @throws MissingRepositoryMethodException
+     */
+    public function __call($method, $arguments)
+    {
+        $repository = $this->getRepository($this->defaultRepository, $this->defaultDataStore);
+        
+        // The registered event listener from the child class will be called.
+        $event = new ApiProcessEvent($repository, $method, $arguments);
+        $this->dispatcher->dispatch(self::API_REPOSITORY, $event);
+
+        // no listener was able to process the event? The method does not exist
+        if (!$event->isProcessed()) {
+            throw new MissingRepositoryMethodException(sprintf('Call to undefined method %s::%s.', get_class($this), $method));
+        }
+
+        // return the listener returned value
+        return $event->getReturnData();
+        
     }
     
     /**
@@ -49,11 +87,12 @@ class BaseApiController extends Controller
      * @param string $documentType form type for the entity or document being processed, if none it will be guessed
      * @param string $location string to construct the Location URL
      * @param boolean $isNew
-     * @return mixed Symfony\Component\HttpFoundation\Response
+     * @return View FOS\RestBundle\View\View
      */
     protected function processForm($document, $documentType = null, $location = false, $isNew = false)
     {
         $statusCode = $isNew ? Codes::HTTP_CREATED : Codes::HTTP_NO_CONTENT;
+        $request = $this->getRequest();
         
         if(!isset($documentType)) {
             // try to guess the document type from the document class name
@@ -61,19 +100,26 @@ class BaseApiController extends Controller
             $documentType = new $documentTypeClass();
         }
         
-        $form = $this->createForm($documentType, $document);
-        $form->bind($this->getRequest());
+        $form = $this->createForm($documentType, $document, array('method' => $request->getMethod()));
+        
+        // Support for versions greater than 2.3 which shouldn't pass the request 
+        // to the submit method and previous version that support it. 
+        if (version_compare(Kernel::VERSION, '2.3', '>=')) {
+            $form->handleRequest($this->getRequest());
+        }
+        else if(version_compare(Kernel::VERSION, '2.1', '>=')){
+            $form->submit($this->getRequest());
+        }
         
         if($form->isValid()) {
             $manager = $this->getManager();
             $manager->persist($document);
             $manager->flush();
             
-            $response = new Response();
-            $response->setStatusCode($statusCode);
+            $view = View::create(null, $statusCode);
             
             if($statusCode === Codes::HTTP_CREATED) {
-                $response->headers->set('Location', 
+                $view->setHeader('Location',
                     $this->generateUrl(
                         $location, 
                         array('id' => $document->getId()),
@@ -84,18 +130,18 @@ class BaseApiController extends Controller
         }
         else {
             $errors = $this->getErrorMessages($form);
-            $response = View::create($errors, Codes::HTTP_BAD_REQUEST);
+            $view = View::create($errors, Codes::HTTP_BAD_REQUEST);
         }
         
-        return $response;
+        return $view;
     }
     
     /**
      * 
      * @param mixed $document document|entity 
      * @param mixed $documentType form type for the entity or document.
-     * @param type @param string $location string to construct the Location URL
-     * @return mixed document|entity
+     * @param string $location string to construct the Location URL
+     * @return View FOS\RestBundle\View\View
      */
     protected function create($document, $documentType, $location)
     {
@@ -108,20 +154,23 @@ class BaseApiController extends Controller
      * @param mixed $documentType
      * @param string $repositoryName
      * @param string $dataStore
-     * @return Symfony\Component\HttpFoundation\Response|FOS\RestBundle\View\View
+     * @return View FOS\RestBundle\View\View
      */
     protected function edit($id, $documentType = null, $repositoryName = null, $dataStore = null)
     {
         $document = $this->getOne('findOneById', array('id' => $id), $repositoryName, $dataStore);
         
         if($document === null) {
-            $response = View::create(sprintf('The requested resource with id "%s" doesn\'t exist.', $id), 400);
+            /**
+             * @todo Add support for PUT request
+             */
+            $view = View::create(sprintf('The requested resource with id "%s" doesn\'t exist.', $id), 400);
         }
         else {
-            $response = $this->processForm($document, $documentType);
+            $view = $this->processForm($document, $documentType);
         }
         
-        return $response;
+        return $view;
     }
     
     /**
@@ -130,7 +179,7 @@ class BaseApiController extends Controller
      * @param mixed $id
      * @param string $repositoryName
      * @param string $dataStore
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @return View FOS\RestBundle\View\View
      */
     protected function delete($id, $repositoryName = null, $dataStore = null)
     {
@@ -140,10 +189,7 @@ class BaseApiController extends Controller
         $manager->remove($document);
         $manager->flush();
 
-        $response = new Response();
-        $response->setStatusCode(Codes::HTTP_NO_CONTENT);
-        
-        return $response;
+        return View::create(null, Codes::HTTP_NO_CONTENT);
     }
     
     /**
@@ -165,7 +211,11 @@ class BaseApiController extends Controller
             $data = $event->getReturnData();
         }
         else if($this->dispatcher->hasListeners(self::API_PROCESS)) {
-            // Not implemented yet...
+            /**
+             * Not implemented yet...
+             * @TODO add listener to perform actions other than search. consider using 
+             * the form listeners to avoid this block all together. 
+             */
             $data = array();
         }
 
@@ -189,7 +239,10 @@ class BaseApiController extends Controller
         $listener = new RepositoryActionListener($method, $parameters);
         $this->dispatcher->addListener(self::API_GET, array($listener, 'onFindOne'));
         
-        return $this->processData($repositoryName, $dataStore);
+        $data = $this->processData($repositoryName, $dataStore);
+        $this->dispatcher->removeListener(self::API_GET, $listener);
+        
+        return $data;
     }
     
     /**
@@ -208,7 +261,10 @@ class BaseApiController extends Controller
         $listener = new RepositoryActionListener($method, $parameters);
         $this->dispatcher->addListener(self::API_GET, array($listener, 'onFindCollection'));
         
-        return $this->processData($repositoryName, $dataStore);
+        $data = $this->processData($repositoryName, $dataStore);
+        $this->dispatcher->removeListener(self::API_GET, array($listener, 'onFindCollection'));
+        
+        return $data;
     }
     
     /**

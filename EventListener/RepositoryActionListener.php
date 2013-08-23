@@ -24,12 +24,12 @@ use Onema\BaseApiBundle\Event\ApiProcessEvent;
  */
 class RepositoryActionListener
 {
-    private $parameters;
+    private $arguments;
     private $method;
     
-    public function __construct($method, $parameters = array()) {
+    public function __construct($method = null, $arguments = array()) {
         $this->method = $method;
-        $this->parameters = $parameters;
+        $this->arguments = $arguments;
     }
     
     /**
@@ -51,6 +51,7 @@ class RepositoryActionListener
      * This method should be called when a single result is expected. 
      * 
      * @param \Onema\BaseApiBundle\Event\ApiProcessEvent $event
+     * @deprecated since version 0.0.2
      */
     public function onFindOne(ApiProcessEvent $event)
     {
@@ -58,26 +59,34 @@ class RepositoryActionListener
         $event->setReturnData($document);
     }
     
+    
+    public function onCall(ApiProcessEvent $event)
+    {
+        $this->method = $event->getMethod();
+        $this->arguments = $event->getArguments();
+        
+        $document = $this->execute($event);
+        $event->setReturnData($document);
+    }
+    
     /**
-     * JMS Serializer doesn't play well with all doctrine ODM objects. this is a 
-     * utility funciton that will put this collection into a siple array. 
+     * JMS Serializer doesn't play well with doctrine ODM Cursor objects. this is a 
+     * utility method that will put this collection into a siple array. 
      * @param type $documents
      * @return array
      */
     private function convertDocumentCollection($documents)
     {
-        $collection = array();
-        
-        foreach ($documents as $document) {
-            $collection[] = $document;
+        if($documents instanceof \Doctrine\ODM\MongoDB\Cursor) {
+            $documents = $documents->toArray();
         }
         
         // No data should return a 404 
-        if(empty($collection)) {
+        if(empty($documents)) {
             throw new ResourceNotFoundException('Could not find resource', 404);
         }
         
-        return $collection;
+        return $documents;
     }
     
     /**
@@ -97,7 +106,7 @@ class RepositoryActionListener
                 array(
                     $repository, 
                     $this->method
-                ), $this->parameters);
+                ), $this->arguments);
         }
         catch(DBALException $e) {
             throw new RuntimeException('A DBAL error occurred while processing your request');
