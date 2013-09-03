@@ -11,11 +11,10 @@ namespace Onema\BaseApiBundle\Controller;
 
 use Symfony\Bundle\FrameworkBundle\Controller\Controller;
 use Symfony\Component\EventDispatcher\EventDispatcher;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
-use Symfony\Component\Routing\Exception\ResourceNotFoundException;
 use Symfony\Component\HttpKernel\Kernel;
+
+use JMS\Serializer\SerializerBuilder;
 
 use FOS\RestBundle\View\View;
 use FOS\Rest\Util\Codes;
@@ -53,7 +52,7 @@ class BaseApiController extends Controller
      * 
      * How to extend a Class without Using Inheritance {@link http://symfony.com/doc/current/cookbook/event_dispatcher/class_extension.html}
      * Related classes {@link Onema\BaseApiBundle\EventListener\RepositoryActionListener}
-     * and {@link Onema\BaseApiBundle\Event\ApiProcessEvent description
+     * and {@link Onema\BaseApiBundle\Event\ApiProcessEvent}
      * 
      * @param string $method
      * @param array $arguments
@@ -88,7 +87,7 @@ class BaseApiController extends Controller
      * @param string $documentType form type for the entity or document being processed, if none it will be guessed
      * @param string $location string to construct the Location URL
      * @param boolean $isNew
-     * @return mixed Symfony\Component\HttpFoundation\Response
+     * @return View FOS\RestBundle\View\View
      */
     protected function processForm($document, $documentType = null, $location = false, $isNew = false)
     {
@@ -117,11 +116,10 @@ class BaseApiController extends Controller
             $manager->persist($document);
             $manager->flush();
             
-            $response = new Response();
-            $response->setStatusCode($statusCode);
+            $view = View::create(null, $statusCode);
             
             if($statusCode === Codes::HTTP_CREATED) {
-                $response->headers->set('Location', 
+                $view->setHeader('Location',
                     $this->generateUrl(
                         $location, 
                         array('id' => $document->getId()),
@@ -132,18 +130,18 @@ class BaseApiController extends Controller
         }
         else {
             $errors = $this->getErrorMessages($form);
-            $response = View::create($errors, Codes::HTTP_BAD_REQUEST);
+            $view = View::create($errors, Codes::HTTP_BAD_REQUEST);
         }
         
-        return $response;
+        return $view;
     }
     
     /**
      * 
      * @param mixed $document document|entity 
      * @param mixed $documentType form type for the entity or document.
-     * @param type @param string $location string to construct the Location URL
-     * @return mixed Symfony\Component\HttpFoundation\Response|FOS\RestBundle\View\View
+     * @param string $location string to construct the Location URL
+     * @return View FOS\RestBundle\View\View
      */
     protected function create($document, $documentType, $location)
     {
@@ -156,7 +154,7 @@ class BaseApiController extends Controller
      * @param mixed $documentType
      * @param string $repositoryName
      * @param string $dataStore
-     * @return Symfony\Component\HttpFoundation\Response|FOS\RestBundle\View\View
+     * @return View FOS\RestBundle\View\View
      */
     protected function edit($id, $documentType = null, $repositoryName = null, $dataStore = null)
     {
@@ -166,13 +164,13 @@ class BaseApiController extends Controller
             /**
              * @todo Add support for PUT request
              */
-            $response = View::create(sprintf('The requested resource with id "%s" doesn\'t exist.', $id), 400);
+            $view = View::create(sprintf('The requested resource with id "%s" doesn\'t exist.', $id), 400);
         }
         else {
-            $response = $this->processForm($document, $documentType);
+            $view = $this->processForm($document, $documentType);
         }
         
-        return $response;
+        return $view;
     }
     
     /**
@@ -181,7 +179,7 @@ class BaseApiController extends Controller
      * @param mixed $id
      * @param string $repositoryName
      * @param string $dataStore
-     * @return \Symfony\Component\HttpFoundation\Response
+     * @return View FOS\RestBundle\View\View
      */
     protected function delete($id, $repositoryName = null, $dataStore = null)
     {
@@ -191,10 +189,7 @@ class BaseApiController extends Controller
         $manager->remove($document);
         $manager->flush();
 
-        $response = new Response();
-        $response->setStatusCode(Codes::HTTP_NO_CONTENT);
-        
-        return $response;
+        return View::create(null, Codes::HTTP_NO_CONTENT);
     }
     
     /**
