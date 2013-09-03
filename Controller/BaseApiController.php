@@ -143,7 +143,7 @@ class BaseApiController extends Controller
      * @param mixed $document document|entity 
      * @param mixed $documentType form type for the entity or document.
      * @param type @param string $location string to construct the Location URL
-     * @return mixed document|entity
+     * @return mixed Symfony\Component\HttpFoundation\Response|FOS\RestBundle\View\View
      */
     protected function create($document, $documentType, $location)
     {
