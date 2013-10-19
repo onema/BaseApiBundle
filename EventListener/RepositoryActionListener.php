@@ -56,11 +56,14 @@ class RepositoryActionListener
     public function onFindOne(ApiProcessEvent $event)
     {
         $document = $this->execute($event);
+        
         // No data should return a 404 
-        if(empty($documents)) {
+        if(empty($document)) {
             throw new ResourceNotFoundException('Could not find resource', 404);
         }
-        $event->setReturnData($document);
+        else {
+            $event->setReturnData($document);
+        }
     }
     
     
