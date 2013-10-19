@@ -164,7 +164,7 @@ class BaseApiController extends Controller
         
         if($document === null) {
             /**
-             * @todo Add support for PUT request
+             * @todo Add support for PUT (idempotent) operations 
              */
             $response = View::create(sprintf('The requested resource with id "%s" doesn\'t exist.', $id), 400);
         }
