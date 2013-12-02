@@ -105,7 +105,7 @@ class BaseApiController extends Controller
         // Support for versions greater than 2.3 which shouldn't pass the request 
         // to the submit method and previous version that support it. 
         if (version_compare(Kernel::VERSION, '2.3', '>=')) {
-            $form->handleRequest($this->getRequest());
+            $form->handleRequest($request);
         }
         else if(version_compare(Kernel::VERSION, '2.1', '>=')){
             $form->submit($this->getRequest());
