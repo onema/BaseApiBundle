@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Kernel;
 use JMS\Serializer\SerializerBuilder;
 
 use FOS\RestBundle\View\View;
-use FOS\Rest\Util\Codes;
+use FOS\RestBundle\Util\Codes;
 
 use Onema\BaseApiBundle\Exception\MissingRepositoryMethodException;
 use Onema\BaseApiBundle\Event\ApiProcessEvent;
