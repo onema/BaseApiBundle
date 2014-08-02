@@ -17,7 +17,7 @@ use Symfony\Component\HttpKernel\Kernel;
 use JMS\Serializer\SerializerBuilder;
 
 use FOS\RestBundle\View\View;
-use FOS\Rest\Util\Codes;
+use FOS\RestBundle\Util\Codes;
 
 use Onema\BaseApiBundle\Exception\MissingRepositoryMethodException;
 use Onema\BaseApiBundle\Event\ApiProcessEvent;
@@ -105,7 +105,7 @@ class BaseApiController extends Controller
         // Support for versions greater than 2.3 which shouldn't pass the request 
         // to the submit method and previous version that support it. 
         if (version_compare(Kernel::VERSION, '2.3', '>=')) {
-            $form->handleRequest($this->getRequest());
+            $form->handleRequest($request);
         }
         else if(version_compare(Kernel::VERSION, '2.1', '>=')){
             $form->submit($this->getRequest());
@@ -162,7 +162,7 @@ class BaseApiController extends Controller
         
         if($document === null) {
             /**
-             * @todo Add support for PUT request
+             * @todo Add support for PUT (idempotent) operations 
              */
             $view = View::create(sprintf('The requested resource with id "%s" doesn\'t exist.', $id), 400);
         }

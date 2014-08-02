@@ -51,12 +51,19 @@ class RepositoryActionListener
      * This method should be called when a single result is expected. 
      * 
      * @param \Onema\BaseApiBundle\Event\ApiProcessEvent $event
-     * @deprecated since version 0.0.2
+     * @deprecated since version 0.2.0
      */
     public function onFindOne(ApiProcessEvent $event)
     {
         $document = $this->execute($event);
-        $event->setReturnData($document);
+        
+        // No data should return a 404 
+        if(empty($document)) {
+            throw new ResourceNotFoundException('Could not find resource', 404);
+        }
+        else {
+            $event->setReturnData($document);
+        }
     }
     
     
@@ -113,11 +120,6 @@ class RepositoryActionListener
         }
         catch (PDOException $e) {
             throw new RuntimeException('A DB configuration error occurred while processing your request');
-        }
-        
-        // No data should return a 404 
-        if(empty($documents)) {
-            throw new ResourceNotFoundException('Could not find resource', 404);
         }
         
         return $documents;
